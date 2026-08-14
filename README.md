@@ -69,6 +69,12 @@ Config path: `~/.config/mcp-docs-ask/config.json`
           "include": ["docs/api/**"]
         }
       }
+    },
+    "local": {
+      "source": "/path/to/docs",
+      "desc": "Local markdown tree (no git; ref unused)",
+      "include": ["**/*.md"],
+      "exclude": ["archive/**"]
     }
   },
   "default_docs": "default",
@@ -78,7 +84,7 @@ Config path: `~/.config/mcp-docs-ask/config.json`
 }
 ```
 
-Optional `desc` on each docs collection and layer helps agents pick the right target.
+`default` is a git URL (`ref` applies). `local` is a filesystem path (`ref` is unused if present). Optional `desc` on each docs collection and layer helps agents pick the right target.
 
 **Embedding model recommendation**
 
@@ -93,7 +99,7 @@ Changing `embedding_model` requires a `reindex` (the on-disk index stores the mo
 |---|---|
 | `docs.<id>.source` | Docs **repo root**: local path or git URL |
 | `docs.<id>.desc` | Short description for discovery (`list_docs`) |
-| `docs.<id>.ref` | Branch / tag / SHA when `source` is a git URL (default `main`) |
+| `docs.<id>.ref` | Branch / tag / SHA for git URL sources only (default `main`; ignored for local paths) |
 | `docs.<id>.include` | Globs relative to repo root (default `**/*.md`) |
 | `docs.<id>.exclude` | Globs to skip |
 | `docs.<id>.layers.<name>.include` | Path globs for that layer (first match wins) |
@@ -101,8 +107,6 @@ Changing `embedding_model` requires a `reindex` (the on-disk index stores the mo
 | `embedding_model` | sentence-transformers model id (see recommendation above) |
 | `top_k` | Default retrieval count |
 | `chunk_max_chars` | Max body chars per heading chunk |
-
-Local-path example (authors): `"source": "/path/to/docs"`.
 
 Omit `layers` (or set `"layers": {}`) for flat repos — everything is `other`
 and `ask_docs` uses `layer=all`. Configure any names you need for multi-tree

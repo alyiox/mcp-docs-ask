@@ -16,6 +16,12 @@
           "include": ["docs/api/**"]
         }
       }
+    },
+    "local": {
+      "source": "/path/to/docs",
+      "desc": "Local markdown tree (no git; ref unused)",
+      "include": ["**/*.md"],
+      "exclude": ["archive/**"]
     }
   },
   "default_docs": "default",
