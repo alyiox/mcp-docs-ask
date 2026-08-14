@@ -7,13 +7,13 @@
     "url": "https://github.com/alyiox/mcp-docs-ask",
     "source": "github"
   },
-  "version": "0.1.0a2",
+  "version": "0.1.0",
   "packages": [
     {
       "registryType": "pypi",
       "registryBaseUrl": "https://pypi.org",
       "identifier": "mcp-docs-ask",
-      "version": "0.1.0a2",
+      "version": "0.1.0",
       "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
