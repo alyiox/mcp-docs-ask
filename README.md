@@ -136,6 +136,10 @@ Cache layout:
 | `ask_docs` | Retrieve grounded passages + citations for a question |
 | `reindex` | Sync git source (if URL) and rebuild the vector index |
 
+`list_docs` returns a `default` block with the same keys as the config `default`
+block (`docs`, `embedding_model`, `top_k`, `chunk_max_chars`), plus a `docs` list
+where each entry carries its resolved values and a `default` flag.
+
 ## MCP host examples
 
 ### Cursor

@@ -28,6 +28,12 @@ def list_docs_impl(config: Config) -> dict[str, Any]:
             }
         )
     return {
-        "default_docs": config.default_docs,
+        # Mirrors the config `default` block so agents read one shape everywhere.
+        "default": {
+            "docs": config.default_docs,
+            "embedding_model": config.embedding_model,
+            "top_k": config.top_k,
+            "chunk_max_chars": config.chunk_max_chars,
+        },
         "docs": docs,
     }

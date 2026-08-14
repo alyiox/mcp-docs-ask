@@ -43,7 +43,12 @@ def test_list_docs_returns_sanitized_layer_filters() -> None:
     result = list_docs_impl(config)
 
     assert result == {
-        "default_docs": "product",
+        "default": {
+            "docs": "product",
+            "embedding_model": ("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"),
+            "top_k": 8,
+            "chunk_max_chars": 1500,
+        },
         "docs": [
             {
                 "id": "flat",

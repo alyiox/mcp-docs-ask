@@ -74,7 +74,8 @@ async def test_list_docs_reads_the_lifespan_context(client) -> None:
 
     assert not result.is_error
     payload = json.loads(result.content[0].text)
-    assert payload["default_docs"] == "product"
+    assert payload["default"]["docs"] == "product"
+    assert payload["default"]["embedding_model"] == "hash-embedder/v1"
     assert [p["id"] for p in payload["docs"]] == ["product"]
     assert payload["docs"][0]["desc"] == "Product docs"
     assert payload["docs"][0]["embedding_model"] == "hash-embedder/v1"
