@@ -1,0 +1,25 @@
+{
+  "docs": {
+    "default": {
+      "source": "https://github.com/example/docs.git",
+      "desc": "Product guides and API reference",
+      "ref": "main",
+      "include": ["**/*.md"],
+      "exclude": ["archive/**"],
+      "layers": {
+        "guides": {
+          "desc": "How-to and onboarding guides",
+          "include": ["docs/guides/**"]
+        },
+        "api": {
+          "desc": "HTTP API reference",
+          "include": ["docs/api/**"]
+        }
+      }
+    }
+  },
+  "default_docs": "default",
+  "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "top_k": 8,
+  "chunk_max_chars": 1500
+}
