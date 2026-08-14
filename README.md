@@ -119,9 +119,17 @@ Changing `embedding_model` requires a `reindex` (the on-disk index stores the mo
 | `default.top_k` | Default retrieval count |
 | `default.chunk_max_chars` | Default max body chars per heading chunk |
 
-Omit `layers` (or set `"layers": {}`) for flat repos — everything is `other`
-and `ask_docs` uses `layer=all`. Configure any names you need for multi-tree
-docs. First match wins. Layer names are case-insensitive; `all` / `other` are reserved.
+**Layers** partition indexed files by path glob. First match wins. Names are
+case-insensitive; `all` is reserved (cannot be configured as a layer name).
+
+| `ask_docs` `layer` | Meaning |
+|---|---|
+| `all` (default) | Every indexed chunk (named layers and paths outside them) |
+| `<named>` | Only chunks whose path matched that named layer’s `include` globs |
+
+Paths that match no named-layer glob are still indexed and only appear under
+`layer=all`. Omit `layers` (or set `"layers": {}`) for flat repos — use
+`layer=all`.
 
 Cache layout:
 
@@ -133,12 +141,13 @@ Cache layout:
 | Tool | Description |
 |---|---|
 | `list_docs` | List configured docs collections and their layer filters |
-| `ask_docs` | Retrieve grounded passages + citations for a question |
+| `ask_docs` | Retrieve grounded passages + citations (`layer`: `all` or a named layer) |
 | `reindex` | Sync git source (if URL) and rebuild the vector index |
 
 `list_docs` returns a `default` block with the same keys as the config `default`
 block (`docs`, `embedding_model`, `top_k`, `chunk_max_chars`), plus a `docs` list
 where each entry carries its resolved values and a `default` flag.
+`layer_filters` is `all` plus named layer ids — see **Layers** above.
 
 ## MCP host examples
 

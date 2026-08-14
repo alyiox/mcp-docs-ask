@@ -24,7 +24,7 @@ def list_docs_impl(config: Config) -> dict[str, Any]:
                 "top_k": config.top_k_for(docs_id),
                 "chunk_max_chars": config.chunk_max_chars_for(docs_id),
                 "layers": configured_layers,
-                "layer_filters": ["all", *layer_ids, "other"],
+                "layer_filters": ["all", *layer_ids],
             }
         )
     return {

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ..chunker import UNNAMED_LAYER
 from ..config import Config
 from ..embedder import Embedder
 from ..index import (
@@ -30,7 +31,7 @@ def ask_docs_impl(
     docs_id = docs or config.default_docs
     cfg = config.doc(docs_id)
     layer_norm = layer.strip().lower() if layer else "all"
-    allowed_layers = {"all", "other", *cfg.layers}
+    allowed_layers = {"all", *cfg.layers}
     if layer_norm not in allowed_layers:
         known = ", ".join(sorted(allowed_layers))
         raise ValueError(f"layer must be one of: {known}")
@@ -60,7 +61,7 @@ def ask_docs_impl(
     return {
         "docs": docs_id,
         "layer": layer_norm,
-        "available_layers": meta.layers,
+        "available_layers": [name for name in meta.layers if name != UNNAMED_LAYER],
         "docs_rev": meta.docs_rev or checkout.docs_rev,
         "docs_source": meta.docs_source,
         "indexed_files": len(meta.files),

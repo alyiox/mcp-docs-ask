@@ -105,7 +105,7 @@ def _parse_layers(raw: Any) -> dict[str, LayerEntry]:
         if not isinstance(name, str) or not name.strip():
             raise ValueError("docs.layers names must be non-empty strings")
         normalized = name.strip().lower()
-        if normalized in {"all", "other"}:
+        if normalized == "all":
             raise ValueError(f"docs.layers name {normalized!r} is reserved")
         if normalized in layers:
             raise ValueError(f"duplicate docs.layers name after normalization: {normalized!r}")

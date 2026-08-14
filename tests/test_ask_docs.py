@@ -139,7 +139,7 @@ def test_ask_docs_rejects_unknown_layer(tmp_path: Path, monkeypatch: pytest.Monk
             "default": {"docs": "default", "embedding_model": "hash-embedder/v1"},
         }
     )
-    with pytest.raises(ValueError, match="all, guides, other"):
+    with pytest.raises(ValueError, match="all, guides"):
         ask_docs_impl(
             config,
             HashEmbedder(model_name="hash-embedder/v1"),

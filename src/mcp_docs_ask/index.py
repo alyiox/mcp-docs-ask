@@ -14,7 +14,7 @@ from typing import Any
 
 import numpy as np
 
-from .chunker import Chunk, chunk_file
+from .chunker import UNNAMED_LAYER, Chunk, chunk_file
 from .config import DocsEntry, indexes_dir
 from .embedder import Embedder
 from .sync import DocsCheckout
@@ -199,7 +199,7 @@ def build_index(
         docs_source=checkout.source,
         chunk_count=len(chunks),
         files=rel_files,
-        layers=sorted({chunk.layer for chunk in chunks}),
+        layers=sorted({chunk.layer for chunk in chunks if chunk.layer != UNNAMED_LAYER}),
     )
     _write_index(docs_id, chunks, vectors, meta)
     return meta
@@ -299,9 +299,8 @@ def format_answer_context(hits: list[SearchHit]) -> str:
     parts: list[str] = []
     for i, hit in enumerate(hits, start=1):
         heading = hit.heading or "(preamble)"
-        parts.append(
-            f"[{i}] {hit.path} · {heading} · layer={hit.layer} · score={hit.score}\n{hit.snippet}"
-        )
+        layer_part = f" · layer={hit.layer}" if hit.layer != UNNAMED_LAYER else ""
+        parts.append(f"[{i}] {hit.path} · {heading}{layer_part} · score={hit.score}\n{hit.snippet}")
     return "\n\n".join(parts)
 
 

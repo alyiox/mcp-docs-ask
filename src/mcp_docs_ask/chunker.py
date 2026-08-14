@@ -10,13 +10,16 @@ from pathlib import Path, PurePosixPath
 _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.MULTILINE)
 
+# Sentinel for paths that match no named-layer glob (not exposed as a tool filter).
+UNNAMED_LAYER = ""
+
 
 @dataclass(frozen=True)
 class Chunk:
     path: str  # repo-relative posix path
     heading: str
     body: str
-    layer: str  # configured layer name | other
+    layer: str  # named layer, or UNNAMED_LAYER if no layer glob matched
     embed_text: str
 
     @property
@@ -32,7 +35,7 @@ def infer_layer(
     for name, patterns in (layers or {}).items():
         if any(posix.full_match(pattern) for pattern in patterns):
             return name
-    return "other"
+    return UNNAMED_LAYER
 
 
 def strip_html_comments(text: str) -> str:

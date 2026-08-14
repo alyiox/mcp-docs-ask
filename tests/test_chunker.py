@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
-from mcp_docs_ask.chunker import chunk_markdown, infer_layer, strip_html_comments
+from mcp_docs_ask.chunker import (
+    UNNAMED_LAYER,
+    chunk_markdown,
+    infer_layer,
+    strip_html_comments,
+)
 
 
-def test_infer_layer_without_rules_is_other() -> None:
-    assert infer_layer("docs/guides/getting-started.md") == "other"
-    assert infer_layer("docs/api/users.md") == "other"
-    assert infer_layer("README.md") == "other"
+def test_infer_layer_without_rules_is_unnamed() -> None:
+    assert infer_layer("docs/guides/getting-started.md") == UNNAMED_LAYER
+    assert infer_layer("docs/api/users.md") == UNNAMED_LAYER
+    assert infer_layer("README.md") == UNNAMED_LAYER
 
 
 def test_infer_configured_layer_first_match_wins() -> None:
@@ -20,8 +25,8 @@ def test_infer_configured_layer_first_match_wins() -> None:
     assert infer_layer("docs/guides/getting-started.md", layers) == "guides"
     assert infer_layer("docs/api/users/get.md", layers) == "api"
     assert infer_layer("docs/reference/start.md", layers) == "reference"
-    assert infer_layer("README.md", layers) == "other"
-    assert infer_layer("docs/guides/a.md", {}) == "other"
+    assert infer_layer("README.md", layers) == UNNAMED_LAYER
+    assert infer_layer("docs/guides/a.md", {}) == UNNAMED_LAYER
 
 
 def test_strip_html_comments() -> None:

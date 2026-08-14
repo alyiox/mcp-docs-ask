@@ -58,7 +58,7 @@ def test_list_docs_returns_sanitized_layer_filters() -> None:
                 "top_k": 8,
                 "chunk_max_chars": 1500,
                 "layers": [],
-                "layer_filters": ["all", "other"],
+                "layer_filters": ["all"],
             },
             {
                 "id": "product",
@@ -71,7 +71,7 @@ def test_list_docs_returns_sanitized_layer_filters() -> None:
                     {"id": "guides", "desc": "Guides"},
                     {"id": "api", "desc": "API"},
                 ],
-                "layer_filters": ["all", "guides", "api", "other"],
+                "layer_filters": ["all", "guides", "api"],
             },
         ],
     }

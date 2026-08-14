@@ -103,9 +103,7 @@ def ask_docs(
     layer: Annotated[
         str,
         Field(
-            description=(
-                "[DocsAsk] Layer filter: all, other, or a configured layer name. Src: config"
-            ),
+            description=("[DocsAsk] Layer filter: all or a named layer from config. Src: config"),
         ),
     ] = "all",
 ) -> str:
