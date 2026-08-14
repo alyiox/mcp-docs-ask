@@ -7,7 +7,7 @@ import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Annotated, Any
 
 from mcp.server.mcpserver import Context, MCPServer
@@ -26,14 +26,20 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ServerContext:
     config: Config
-    embedder: Embedder
+    embedders: dict[str, Embedder] = field(default_factory=dict)
+
+    def embedder_for(self, model_name: str) -> Embedder:
+        embedder = self.embedders.get(model_name)
+        if embedder is None:
+            embedder = SentenceTransformerEmbedder(model_name)
+            self.embedders[model_name] = embedder
+        return embedder
 
 
 @asynccontextmanager
 async def _lifespan(app: MCPServer) -> AsyncIterator[ServerContext]:
     config = load_config()
-    embedder: Embedder = SentenceTransformerEmbedder(config.embedding_model)
-    ctx = ServerContext(config=config, embedder=embedder)
+    ctx = ServerContext(config=config)
     logger.info(
         "docs-ask ready: docs=%s default=%s model=%s",
         sorted(config.docs),
@@ -104,12 +110,14 @@ def ask_docs(
     ] = "all",
 ) -> str:
     server_ctx = _ctx(ctx)
+    docs_id = docs or server_ctx.config.default_docs
+    model = server_ctx.config.embedding_model_for(docs_id)
     try:
         result = ask_docs_impl(
             server_ctx.config,
-            server_ctx.embedder,
+            server_ctx.embedder_for(model),
             question=question,
-            docs=docs,
+            docs=docs_id,
             top_k=top_k,
             layer=layer,
         )
@@ -140,8 +148,14 @@ def reindex(
     ] = None,
 ) -> str:
     server_ctx = _ctx(ctx)
+    docs_id = docs or server_ctx.config.default_docs
+    model = server_ctx.config.embedding_model_for(docs_id)
     try:
-        result = reindex_impl(server_ctx.config, server_ctx.embedder, docs=docs)
+        result = reindex_impl(
+            server_ctx.config,
+            server_ctx.embedder_for(model),
+            docs=docs_id,
+        )
     except Exception as exc:
         return _json({"error": type(exc).__name__, "message": str(exc)})
     return _json(result)

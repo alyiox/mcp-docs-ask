@@ -18,9 +18,6 @@ passages and citations; the MCP host (Cursor / Claude) synthesizes the answer.
 - `ask_docs` retrieval with configurable path-based layer filters
 - `list_docs` discovery for configured docs collections and layer filters
 - `reindex` rebuilds the local vector index; for git URL sources it also fetches updates
-- Multilingual embeddings (default model works across languages)
-- Light ASCII-token boost for coding lookups (`OrderList`, `UserController`, …)
-- Docs source: local path **or** git URL (Homebrew-style cache under `~/.cache/mcp-docs-ask/`)
 
 ## Requirements
 
@@ -53,7 +50,7 @@ Config path: `~/.config/mcp-docs-ask/config.json`
 ```json
 {
   "docs": {
-    "default": {
+    "product": {
       "source": "https://github.com/example/docs.git",
       "desc": "Product guides and API reference",
       "ref": "main",
@@ -68,30 +65,40 @@ Config path: `~/.config/mcp-docs-ask/config.json`
           "desc": "HTTP API reference",
           "include": ["docs/api/**"]
         }
-      }
+      },
+      "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
     },
-    "local": {
+    "team-notes": {
       "source": "/path/to/docs",
-      "desc": "Local markdown tree (no git; ref unused)",
+      "desc": "Internal team notes (local path; ref unused)",
       "include": ["**/*.md"],
       "exclude": ["archive/**"]
     }
   },
-  "default_docs": "default",
-  "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-  "top_k": 8,
-  "chunk_max_chars": 1500
+  "default": {
+    "docs": "product",
+    "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "top_k": 8,
+    "chunk_max_chars": 1500
+  }
 }
 ```
 
-`default` is a git URL (`ref` applies). `local` is a filesystem path (`ref` is unused if present). Optional `desc` on each docs collection and layer helps agents pick the right target.
+`product` is a git URL (`ref` applies). `team-notes` is a filesystem path (`ref` unused).
+Optional `desc` on each docs collection and layer helps agents pick the right target.
+
+`embedding_model`, `top_k`, and `chunk_max_chars` resolve as:
+`docs.<id>.X` → `default.X` → built-in. Omit per-docs keys to inherit.
 
 **Embedding model recommendation**
 
+Any Hugging Face id loadable by `sentence-transformers` works. Pick by language mix:
+
 | Docs / queries | Recommended `embedding_model` |
 |---|---|
-| **English-only** (default when omitted) | `sentence-transformers/all-MiniLM-L6-v2` |
-| **Multilingual** | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (see `config.example.json`) |
+| **English-only** (built-in when omitted) | `sentence-transformers/all-MiniLM-L6-v2` |
+| **Chinese-only** | `BAAI/bge-small-zh-v1.5` |
+| **Multilingual** (~50 langs) | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` |
 
 Changing `embedding_model` requires a `reindex` (the on-disk index stores the model name).
 
@@ -104,9 +111,13 @@ Changing `embedding_model` requires a `reindex` (the on-disk index stores the mo
 | `docs.<id>.exclude` | Globs to skip |
 | `docs.<id>.layers.<name>.include` | Path globs for that layer (first match wins) |
 | `docs.<id>.layers.<name>.desc` | Short layer description for discovery |
-| `embedding_model` | sentence-transformers model id (see recommendation above) |
-| `top_k` | Default retrieval count |
-| `chunk_max_chars` | Max body chars per heading chunk |
+| `docs.<id>.embedding_model` | Optional override (see recommendation above) |
+| `docs.<id>.top_k` | Optional override for default retrieval count |
+| `docs.<id>.chunk_max_chars` | Optional override for max body chars per heading chunk |
+| `default.docs` | Default docs collection id |
+| `default.embedding_model` | Default sentence-transformers model id |
+| `default.top_k` | Default retrieval count |
+| `default.chunk_max_chars` | Default max body chars per heading chunk |
 
 Omit `layers` (or set `"layers": {}`) for flat repos — everything is `other`
 and `ask_docs` uses `layer=all`. Configure any names you need for multi-tree

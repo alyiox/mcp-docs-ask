@@ -1,6 +1,6 @@
 {
   "docs": {
-    "default": {
+    "product": {
       "source": "https://github.com/example/docs.git",
       "desc": "Product guides and API reference",
       "ref": "main",
@@ -15,17 +15,20 @@
           "desc": "HTTP API reference",
           "include": ["docs/api/**"]
         }
-      }
+      },
+      "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
     },
-    "local": {
+    "team-notes": {
       "source": "/path/to/docs",
-      "desc": "Local markdown tree (no git; ref unused)",
+      "desc": "Internal team notes (local path; ref unused)",
       "include": ["**/*.md"],
       "exclude": ["archive/**"]
     }
   },
-  "default_docs": "default",
-  "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-  "top_k": 8,
-  "chunk_max_chars": 1500
+  "default": {
+    "docs": "product",
+    "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "top_k": 8,
+    "chunk_max_chars": 1500
+  }
 }

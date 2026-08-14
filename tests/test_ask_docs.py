@@ -41,27 +41,31 @@ Route PreferencesList → views/Preferences/index.vue
     )
 
 
+def _config(docs: Path, **docs_overrides: object) -> dict:
+    entry: dict = {
+        "source": str(docs),
+        "include": ["docs/**/*.md"],
+        "layers": {
+            "guides": {"include": ["docs/guides/**"]},
+            "api": {"include": ["docs/api/**"]},
+        },
+    }
+    entry.update(docs_overrides)
+    return {
+        "docs": {"default": entry},
+        "default": {
+            "docs": "default",
+            "embedding_model": "hash-embedder/v1",
+            "top_k": 5,
+        },
+    }
+
+
 def test_ask_docs_returns_citations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MCP_DOCS_ASK_CACHE", str(tmp_path / "cache"))
     docs = tmp_path / "docs-repo"
     _fixture_docs(docs)
-    config = config_from_dict(
-        {
-            "docs": {
-                "default": {
-                    "source": str(docs),
-                    "include": ["docs/**/*.md"],
-                    "layers": {
-                        "guides": {"include": ["docs/guides/**"]},
-                        "api": {"include": ["docs/api/**"]},
-                    },
-                }
-            },
-            "default_docs": "default",
-            "embedding_model": "hash-embedder/v1",
-            "top_k": 5,
-        }
-    )
+    config = config_from_dict(_config(docs))
     embedder = HashEmbedder(model_name="hash-embedder/v1")
     result = ask_docs_impl(
         config,
@@ -90,7 +94,7 @@ def test_ask_docs_configured_layer(tmp_path: Path, monkeypatch: pytest.MonkeyPat
                     "layers": {"api": {"include": ["docs/api/**"]}},
                 }
             },
-            "embedding_model": "hash-embedder/v1",
+            "default": {"docs": "default", "embedding_model": "hash-embedder/v1"},
         }
     )
     embedder = HashEmbedder(model_name="hash-embedder/v1")
@@ -102,6 +106,22 @@ def test_ask_docs_configured_layer(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     )
     assert result["citations"]
     assert all(c["layer"] == "api" for c in result["citations"])
+
+
+def test_ask_docs_uses_per_docs_top_k(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MCP_DOCS_ASK_CACHE", str(tmp_path / "cache"))
+    docs = tmp_path / "docs-repo"
+    _fixture_docs(docs)
+    config = config_from_dict(_config(docs, top_k=1))
+    embedder = HashEmbedder(model_name="hash-embedder/v1")
+    result = ask_docs_impl(
+        config,
+        embedder,
+        question="Preferences page read-only Action column Overview",
+        layer="guides",
+    )
+    assert len(result["citations"]) == 1
+    assert result["embedding_model"] == "hash-embedder/v1"
 
 
 def test_ask_docs_rejects_unknown_layer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -116,7 +136,7 @@ def test_ask_docs_rejects_unknown_layer(tmp_path: Path, monkeypatch: pytest.Monk
                     "layers": {"guides": {"include": ["docs/guides/**"]}},
                 }
             },
-            "embedding_model": "hash-embedder/v1",
+            "default": {"docs": "default", "embedding_model": "hash-embedder/v1"},
         }
     )
     with pytest.raises(ValueError, match="all, guides, other"):
@@ -135,7 +155,7 @@ def test_ask_docs_empty_question(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     config = config_from_dict(
         {
             "docs": {"default": {"source": str(docs)}},
-            "embedding_model": "hash-embedder/v1",
+            "default": {"docs": "default", "embedding_model": "hash-embedder/v1"},
         }
     )
     with pytest.raises(ValueError, match="question"):
@@ -149,7 +169,7 @@ def test_reindex_local(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config = config_from_dict(
         {
             "docs": {"default": {"source": str(docs)}},
-            "embedding_model": "hash-embedder/v1",
+            "default": {"docs": "default", "embedding_model": "hash-embedder/v1"},
         }
     )
     out = reindex_impl(config, HashEmbedder(model_name="hash-embedder/v1"))
@@ -164,7 +184,7 @@ def test_config_missing_docs_error(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     config = config_from_dict(
         {
             "docs": {"default": {"source": str(missing)}},
-            "embedding_model": "hash-embedder/v1",
+            "default": {"docs": "default", "embedding_model": "hash-embedder/v1"},
         }
     )
     with pytest.raises(FileNotFoundError):

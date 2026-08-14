@@ -23,13 +23,20 @@ def test_list_docs_returns_sanitized_layer_filters() -> None:
                             "include": ["docs/api/**"],
                         },
                     },
+                    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+                    "top_k": 3,
                 },
                 "flat": {
                     "source": "/private/local/docs",
                     "desc": "Flat local docs",
                 },
             },
-            "default_docs": "product",
+            "default": {
+                "docs": "product",
+                "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                "top_k": 8,
+                "chunk_max_chars": 1500,
+            },
         }
     )
 
@@ -42,6 +49,9 @@ def test_list_docs_returns_sanitized_layer_filters() -> None:
                 "id": "flat",
                 "desc": "Flat local docs",
                 "default": False,
+                "embedding_model": ("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"),
+                "top_k": 8,
+                "chunk_max_chars": 1500,
                 "layers": [],
                 "layer_filters": ["all", "other"],
             },
@@ -49,6 +59,9 @@ def test_list_docs_returns_sanitized_layer_filters() -> None:
                 "id": "product",
                 "desc": "Product guides and API reference",
                 "default": True,
+                "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+                "top_k": 3,
+                "chunk_max_chars": 1500,
                 "layers": [
                     {"id": "guides", "desc": "Guides"},
                     {"id": "api", "desc": "API"},

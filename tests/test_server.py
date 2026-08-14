@@ -19,7 +19,10 @@ _CONFIG = {
             "layers": {"guides": {"include": ["docs/guides/**"]}},
         }
     },
-    "default_docs": "product",
+    "default": {
+        "docs": "product",
+        "embedding_model": "hash-embedder/v1",
+    },
 }
 
 
@@ -74,3 +77,4 @@ async def test_list_docs_reads_the_lifespan_context(client) -> None:
     assert payload["default_docs"] == "product"
     assert [p["id"] for p in payload["docs"]] == ["product"]
     assert payload["docs"][0]["desc"] == "Product docs"
+    assert payload["docs"][0]["embedding_model"] == "hash-embedder/v1"

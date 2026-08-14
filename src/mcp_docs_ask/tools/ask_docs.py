@@ -35,7 +35,7 @@ def ask_docs_impl(
         known = ", ".join(sorted(allowed_layers))
         raise ValueError(f"layer must be one of: {known}")
 
-    k = top_k if top_k is not None else config.top_k
+    k = top_k if top_k is not None else config.top_k_for(docs_id)
     if k < 1:
         raise ValueError("top_k must be >= 1")
 
@@ -46,7 +46,7 @@ def ask_docs_impl(
         checkout,
         cfg,
         embedder,
-        chunk_max_chars=config.chunk_max_chars,
+        chunk_max_chars=config.chunk_max_chars_for(docs_id),
         force=False,
     )
 

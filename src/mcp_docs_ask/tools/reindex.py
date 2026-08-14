@@ -24,7 +24,7 @@ def reindex_impl(
         checkout,
         cfg,
         embedder,
-        chunk_max_chars=config.chunk_max_chars,
+        chunk_max_chars=config.chunk_max_chars_for(docs_id),
         force=True,
     )
     return {

@@ -20,6 +20,9 @@ def list_docs_impl(config: Config) -> dict[str, Any]:
                 "id": docs_id,
                 "desc": entry.desc,
                 "default": docs_id == config.default_docs,
+                "embedding_model": config.embedding_model_for(docs_id),
+                "top_k": config.top_k_for(docs_id),
+                "chunk_max_chars": config.chunk_max_chars_for(docs_id),
                 "layers": configured_layers,
                 "layer_filters": ["all", *layer_ids, "other"],
             }
