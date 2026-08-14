@@ -71,7 +71,8 @@ Follow existing project conventions.
 * Always prefix tool and script invocations with `uv run` so they execute inside the managed environment
 * Do not manually create, activate, or delete `.venv` directories
 * Use `uv version <new-version>` to bump the project version — do **not** edit `pyproject.toml` directly
-* Always commit both `pyproject.toml` and `uv.lock` together after a version bump
+* After bumping, update `server.json` so top-level `version` and `packages[].version` match
+* Always commit `pyproject.toml`, `uv.lock`, and `server.json` together after a version bump
 
 ---
 
