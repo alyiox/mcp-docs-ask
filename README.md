@@ -151,6 +151,24 @@ where each entry carries its resolved values and a `default` flag.
 
 ## MCP host examples
 
+The examples below launch the server with `uvx`, which installs the package on first
+use. Run it once in a terminal beforehand so your host does not block on that install:
+
+```bash
+$ uvx mcp-docs-ask
+Installed 84 packages in 275ms
+```
+
+The server then starts on stdio and waits for input — press Ctrl-C once you see the
+install line. Embedding model weights are fetched separately, on the first `ask_docs`
+or `reindex` call.
+
+> **Linux (including WSL, containers, and CI):** the PyPI `torch` wheel for Linux is
+> the CUDA build. It pulls ~15 `nvidia-*` packages whether or not the machine has an
+> NVIDIA GPU — about 2.7 GB of wheels and ~4 GB on disk. Windows and macOS resolve to
+> a CPU-only wheel (~1 GB) and never download CUDA. Pre-warming matters most here:
+> expect the first `uvx` run to take minutes, not milliseconds.
+
 ### Cursor
 
 Add to `.cursor/mcp.json`:
