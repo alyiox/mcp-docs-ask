@@ -152,11 +152,21 @@ are `all` plus the named layer ids — see **Layers** above.
 
 ### Index block
 
-`list_docs` and `reindex` return the same `index` keys: `origin` (`path` or
-`git`), `root`, `rev`, `file_count`, `chunk_count`, `layers`, `embedding_model`.
-`root` is the local checkout — the source dir for a `path` origin, the cache
-clone under `~/.cache/mcp-docs-ask/repos/<docs-id>/` for a `git` one. It is
-`null` only when a built index outlived its source directory.
+`list_docs` and `reindex` return the same `index` keys: `origin`, `root`, `rev`,
+`file_count`, `chunk_count`, `layers`, `embedding_model`.
+
+`origin` says who owns the checkout at `root`, not whether it is a git repo — a
+`local` source usually is one:
+
+| `origin` | `root` | `reindex` |
+|---|---|---|
+| `local` | the configured source dir, never modified | re-scans files only |
+| `managed` | a clone under `~/.cache/mcp-docs-ask/repos/<docs-id>/` | fetches `ref` first |
+
+`root` is `null` only when a built index outlived its source directory. `rev` is
+the checkout HEAD when one exists (`null` for a non-git directory); for a
+`local` origin the working tree may carry uncommitted edits, so `rev` labels the
+checkout, not the exact indexed content.
 
 `ask_docs` carries only the two answer-scoped keys, `root` and `rev`: the
 checkout that produced the passages, and the revision they came from.

@@ -320,10 +320,15 @@ def hits_to_citations(hits: list[SearchHit]) -> list[dict[str, Any]]:
     ]
 
 
+# Config records how the source was written (a path or a URL); callers care who
+# owns the checkout. A local dir is often a git repo too, so never say "git" here.
+_ORIGIN = {"path": "local", "git": "managed"}
+
+
 def index_summary(meta: IndexMeta, root: str | None) -> dict[str, Any]:
     """Index provenance, one shape for ``list_docs`` and ``reindex``."""
     return {
-        "origin": meta.docs_source,
+        "origin": _ORIGIN.get(meta.docs_source, meta.docs_source),
         "root": root,
         "rev": meta.docs_rev,
         "file_count": len(meta.files),

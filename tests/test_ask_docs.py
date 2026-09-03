@@ -178,7 +178,7 @@ def test_reindex_local(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     out = reindex_impl(config, HashEmbedder(model_name="hash-embedder/v1"))
     assert out["docs"] == "default"
     assert out["index"] == {
-        "origin": "path",
+        "origin": "local",
         "root": str(docs.resolve()),
         "rev": None,
         "file_count": 2,

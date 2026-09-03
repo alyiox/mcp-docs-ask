@@ -109,7 +109,7 @@ def test_list_docs_reports_built_index(tmp_path: Path, monkeypatch: pytest.Monke
     reindex_impl(config, HashEmbedder(model_name="hash-embedder/v1"))
 
     entry = list_docs_impl(config)["docs"][0]
-    assert entry["index"]["origin"] == "path"
+    assert entry["index"]["origin"] == "local"
     assert entry["index"]["file_count"] == 1
     assert entry["index"]["chunk_count"] > 0
     assert entry["index"]["layers"] == ["guides"]
