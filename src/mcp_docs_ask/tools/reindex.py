@@ -6,7 +6,7 @@ from typing import Any
 
 from ..config import Config
 from ..embedder import Embedder
-from ..index import build_index
+from ..index import build_index, index_summary
 from ..sync import resolve_docs_root
 
 
@@ -29,12 +29,5 @@ def reindex_impl(
     )
     return {
         "docs": docs_id,
-        "docs_rev": meta.docs_rev,
-        "docs_source": meta.docs_source,
-        "chunk_count": meta.chunk_count,
-        "indexed_files": len(meta.files),
-        "layers": meta.layers,
-        "embedding_model": meta.embedding_model,
-        "fingerprint": meta.fingerprint,
-        "status": "ok",
+        "index": index_summary(meta, str(checkout.root)),
     }

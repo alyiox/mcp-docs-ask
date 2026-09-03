@@ -63,8 +63,8 @@ def _json(data: dict[str, Any]) -> str:
 @mcp.tool(
     name="list_docs",
     description=(
-        "[DocsAsk] List configured documentation collections and available layer filters. "
-        "Src: config"
+        "[DocsAsk] List configured documentation collections, available layer filters, "
+        "and built-index state (index is null when never indexed). Src: config"
     ),
     annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False),
 )
@@ -76,7 +76,8 @@ def list_docs(ctx: Context[ServerContext, Any]) -> str:
     name="ask_docs",
     description=(
         "[DocsAsk] Retrieve grounded documentation passages for a question. "
-        "Returns answer_context and citations; host synthesizes the answer. Src: index"
+        "Returns answer_context and citations; host synthesizes the answer. "
+        "Read a full source file by joining index.root with a citation path. Src: index"
     ),
     annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False),
 )

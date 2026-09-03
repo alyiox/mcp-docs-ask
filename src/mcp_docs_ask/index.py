@@ -305,13 +305,29 @@ def format_answer_context(hits: list[SearchHit]) -> str:
 
 
 def hits_to_citations(hits: list[SearchHit]) -> list[dict[str, Any]]:
+    """Machine-readable pointers. ``n`` matches the ``[n]`` marker in
+    ``format_answer_context``; passage text lives only there, never twice.
+    """
     return [
         {
+            "n": i,
             "path": h.path,
             "heading": h.heading,
             "layer": h.layer,
             "score": h.score,
-            "snippet": h.snippet,
         }
-        for h in hits
+        for i, h in enumerate(hits, start=1)
     ]
+
+
+def index_summary(meta: IndexMeta, root: str | None) -> dict[str, Any]:
+    """Index provenance, one shape for ``list_docs`` and ``reindex``."""
+    return {
+        "origin": meta.docs_source,
+        "root": root,
+        "rev": meta.docs_rev,
+        "file_count": len(meta.files),
+        "chunk_count": meta.chunk_count,
+        "layers": [name for name in meta.layers if name != UNNAMED_LAYER],
+        "embedding_model": meta.embedding_model,
+    }

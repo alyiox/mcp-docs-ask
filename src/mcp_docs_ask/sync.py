@@ -83,6 +83,29 @@ def _checkout_ref(dest: Path, ref: str) -> None:
         _run_git(["checkout", ref], cwd=dest)
 
 
+def docs_location(docs_id: str, cfg: DocsEntry) -> tuple[Path, str]:
+    """Return (root, origin) for a collection without cloning or fetching.
+
+    ``origin`` is ``"path"`` for a local source dir, ``"git"`` for a URL whose
+    checkout lives in the cache. Read-only callers (``list_docs``) use this so
+    listing never touches the network; ``resolve_docs_root`` builds on it.
+    """
+    source = cfg.source.strip()
+    path = Path(source).expanduser()
+
+    if path.is_dir():
+        return path.resolve(), "path"
+
+    if not is_git_url(source):
+        raise FileNotFoundError(
+            f"docs source path does not exist: {path}. "
+            "Clone the repo, or set source to a git URL "
+            "(e.g. https://github.com/example/docs.git)."
+        )
+
+    return repos_dir() / docs_id, "git"
+
+
 def resolve_docs_root(
     docs_id: str,
     cfg: DocsEntry,
@@ -95,19 +118,12 @@ def resolve_docs_root(
     ``ask_docs`` should call with ``update=False``; ``reindex`` with ``update=True``.
     """
     source = cfg.source.strip()
-    path = Path(source).expanduser()
+    root, origin = docs_location(docs_id, cfg)
 
-    if path.is_dir():
-        return DocsCheckout(root=path.resolve(), source="path", docs_rev=short_rev(path))
+    if origin == "path":
+        return DocsCheckout(root=root, source="path", docs_rev=short_rev(root))
 
-    if not is_git_url(source):
-        raise FileNotFoundError(
-            f"docs source path does not exist: {path}. "
-            "Clone the repo, or set source to a git URL "
-            "(e.g. https://github.com/example/docs.git)."
-        )
-
-    dest = repos_dir() / docs_id
+    dest = root
     dest.parent.mkdir(parents=True, exist_ok=True)
 
     if not (dest / ".git").exists():

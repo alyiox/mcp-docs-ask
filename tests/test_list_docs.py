@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 from mcp_docs_ask.config import config_from_dict
+from mcp_docs_ask.embedder import HashEmbedder
 from mcp_docs_ask.tools.list_docs import list_docs_impl
+from mcp_docs_ask.tools.reindex import reindex_impl
 
 
-def test_list_docs_returns_sanitized_layer_filters() -> None:
+def test_list_docs_returns_sanitized_layers(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MCP_DOCS_ASK_CACHE", str(tmp_path / "cache"))
     config = config_from_dict(
         {
             "docs": {
@@ -58,7 +67,7 @@ def test_list_docs_returns_sanitized_layer_filters() -> None:
                 "top_k": 8,
                 "chunk_max_chars": 1500,
                 "layers": [],
-                "layer_filters": ["all"],
+                "index": None,
             },
             {
                 "id": "product",
@@ -71,7 +80,7 @@ def test_list_docs_returns_sanitized_layer_filters() -> None:
                     {"id": "guides", "desc": "Guides"},
                     {"id": "api", "desc": "API"},
                 ],
-                "layer_filters": ["all", "guides", "api"],
+                "index": None,
             },
         ],
     }
@@ -79,3 +88,32 @@ def test_list_docs_returns_sanitized_layer_filters() -> None:
     dumped = str(result)
     assert "example.invalid" not in dumped
     assert "/private/local" not in dumped
+
+
+def test_list_docs_reports_built_index(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MCP_DOCS_ASK_CACHE", str(tmp_path / "cache"))
+    docs = tmp_path / "docs"
+    (docs / "guides").mkdir(parents=True)
+    (docs / "guides" / "a.md").write_text("# A\n\nAlpha body text.\n", encoding="utf-8")
+    config = config_from_dict(
+        {
+            "docs": {
+                "product": {
+                    "source": str(docs),
+                    "layers": {"guides": {"include": ["guides/**"]}},
+                }
+            },
+            "default": {"docs": "product", "embedding_model": "hash-embedder/v1"},
+        }
+    )
+    reindex_impl(config, HashEmbedder(model_name="hash-embedder/v1"))
+
+    entry = list_docs_impl(config)["docs"][0]
+    assert entry["index"]["origin"] == "path"
+    assert entry["index"]["file_count"] == 1
+    assert entry["index"]["chunk_count"] > 0
+    assert entry["index"]["layers"] == ["guides"]
+    assert entry["index"]["embedding_model"] == "hash-embedder/v1"
+    # Discovery must not disclose where the docs live.
+    assert entry["index"]["root"] is None
+    assert str(docs) not in str(entry)

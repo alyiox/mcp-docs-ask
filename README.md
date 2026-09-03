@@ -140,14 +140,39 @@ Cache layout:
 
 | Tool | Description |
 |---|---|
-| `list_docs` | List configured docs collections and their layer filters |
+| `list_docs` | List configured docs collections, layer filters, and index state |
 | `ask_docs` | Retrieve grounded passages + citations (`layer`: `all` or a named layer) |
 | `reindex` | Sync git source (if URL) and rebuild the vector index |
 
 `list_docs` returns a `default` block with the same keys as the config `default`
 block (`docs`, `embedding_model`, `top_k`, `chunk_max_chars`), plus a `docs` list
-where each entry carries its resolved values and a `default` flag.
-`layer_filters` is `all` plus named layer ids — see **Layers** above.
+where each entry carries its resolved values, a `default` flag, and an `index`
+block (`null` when the collection has never been indexed). Valid `layer` values
+are `all` plus the named layer ids — see **Layers** above.
+
+### Index block
+
+`list_docs` and `reindex` return the same `index` keys: `origin` (`path` or
+`git`), `root`, `rev`, `file_count`, `chunk_count`, `layers`, `embedding_model`.
+`root` is `null` in `list_docs` so discovery never discloses where the docs live.
+
+`ask_docs` carries only the two answer-scoped keys, `root` and `rev`: the
+checkout that produced the passages, and the revision they came from.
+
+### Reading a full source file
+
+`citations[].path` is repo-relative and stable; `answer_context` holds the
+passage text once, keyed by the `[n]` markers that match `citations[].n`. To read
+a whole source file, join `index.root` from the same `ask_docs` response with a
+citation path:
+
+```
+/home/you/docs-repo  +  product/features/budget.md
+```
+
+Take `root` from the response that produced the citations rather than an earlier
+`reindex` — `ask_docs` rebuilds a stale index itself, so its `rev` is the one
+that matches the passages in hand.
 
 ## MCP host examples
 

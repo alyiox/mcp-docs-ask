@@ -78,8 +78,11 @@ def test_ask_docs_returns_citations(tmp_path: Path, monkeypatch: pytest.MonkeyPa
     assert "answer_context" in result
     assert result["docs"] == "default"
     assert result["layer"] == "guides"
-    assert result["available_layers"] == ["api", "guides"]
-    assert "synthesize" in result["note"].lower() or "Retrieval" in result["note"]
+    assert result["index"]["root"] == str(docs.resolve())
+    assert result["citations"][0]["n"] == 1
+    # Passage text lives only in answer_context, never duplicated per citation.
+    assert all("snippet" not in c for c in result["citations"])
+    assert "do not invent" in result["note"].lower()
 
 
 def test_ask_docs_configured_layer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -121,7 +124,7 @@ def test_ask_docs_uses_per_docs_top_k(tmp_path: Path, monkeypatch: pytest.Monkey
         layer="guides",
     )
     assert len(result["citations"]) == 1
-    assert result["embedding_model"] == "hash-embedder/v1"
+    assert result["citations"][0]["n"] == 1
 
 
 def test_ask_docs_rejects_unknown_layer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -173,9 +176,17 @@ def test_reindex_local(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         }
     )
     out = reindex_impl(config, HashEmbedder(model_name="hash-embedder/v1"))
-    assert out["status"] == "ok"
     assert out["docs"] == "default"
-    assert out["chunk_count"] > 0
+    assert out["index"] == {
+        "origin": "path",
+        "root": str(docs.resolve()),
+        "rev": None,
+        "file_count": 2,
+        "chunk_count": out["index"]["chunk_count"],
+        "layers": [],
+        "embedding_model": "hash-embedder/v1",
+    }
+    assert out["index"]["chunk_count"] > 0
 
 
 def test_config_missing_docs_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

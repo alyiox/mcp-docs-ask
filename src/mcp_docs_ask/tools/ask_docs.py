@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..chunker import UNNAMED_LAYER
 from ..config import Config
 from ..embedder import Embedder
 from ..index import (
@@ -61,15 +60,13 @@ def ask_docs_impl(
     return {
         "docs": docs_id,
         "layer": layer_norm,
-        "available_layers": [name for name in meta.layers if name != UNNAMED_LAYER],
-        "docs_rev": meta.docs_rev or checkout.docs_rev,
-        "docs_source": meta.docs_source,
-        "indexed_files": len(meta.files),
-        "embedding_model": meta.embedding_model,
+        # Answer-scoped provenance only: root to reach the files, rev to trust
+        # them. Collection state lives on list_docs / reindex.
+        "index": {
+            "root": str(checkout.root),
+            "rev": meta.docs_rev or checkout.docs_rev,
+        },
         "answer_context": format_answer_context(hits),
         "citations": hits_to_citations(hits),
-        "note": (
-            "Retrieval only — synthesize the answer from answer_context and citations. "
-            "Do not invent facts not present in the passages."
-        ),
+        "note": "Answer only from answer_context; do not invent facts.",
     }
