@@ -23,7 +23,7 @@ def test_resolve_local_path(tmp_path: Path) -> None:
     (root / "guides").mkdir()
     cfg = DocsEntry(source=str(root))
     checkout = resolve_docs_root("default", cfg, update=False)
-    assert checkout.source == "path"
+    assert checkout.origin == "file"
     assert checkout.root == root.resolve()
 
 

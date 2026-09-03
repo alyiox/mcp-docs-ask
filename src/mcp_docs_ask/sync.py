@@ -28,8 +28,8 @@ def is_git_url(value: str) -> bool:
 @dataclass(frozen=True)
 class DocsCheckout:
     root: Path
-    source: str  # "path" | "git"
-    docs_rev: str | None
+    origin: str  # "file" | "git"
+    rev: str | None
 
 
 def _run_git(args: list[str], cwd: Path | None = None) -> str:
@@ -86,15 +86,15 @@ def _checkout_ref(dest: Path, ref: str) -> None:
 def docs_location(docs_id: str, cfg: DocsEntry) -> tuple[Path, str]:
     """Return (root, origin) for a collection without cloning or fetching.
 
-    ``origin`` is ``"path"`` for a local source dir, ``"git"`` for a URL whose
-    checkout lives in the cache. Read-only callers (``list_docs``) use this so
-    listing never touches the network; ``resolve_docs_root`` builds on it.
+    ``origin`` mirrors the configured source: ``"file"`` for a filesystem path,
+    ``"git"`` for a URL whose checkout lives in the cache. Read-only callers
+    (``list_docs``) use this so listing never touches the network.
     """
     source = cfg.source.strip()
     path = Path(source).expanduser()
 
     if path.is_dir():
-        return path.resolve(), "path"
+        return path.resolve(), "file"
 
     if not is_git_url(source):
         raise FileNotFoundError(
@@ -120,8 +120,8 @@ def resolve_docs_root(
     source = cfg.source.strip()
     root, origin = docs_location(docs_id, cfg)
 
-    if origin == "path":
-        return DocsCheckout(root=root, source="path", docs_rev=short_rev(root))
+    if origin == "file":
+        return DocsCheckout(root=root, origin=origin, rev=short_rev(root))
 
     dest = root
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -136,4 +136,4 @@ def resolve_docs_root(
     if not dest.is_dir():
         raise FileNotFoundError(f"git checkout missing at {dest}")
 
-    return DocsCheckout(root=dest.resolve(), source="git", docs_rev=short_rev(dest))
+    return DocsCheckout(root=dest.resolve(), origin=origin, rev=short_rev(dest))

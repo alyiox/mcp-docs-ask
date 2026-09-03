@@ -64,7 +64,7 @@ def ask_docs_impl(
         # them. Collection state lives on list_docs / reindex.
         "index": {
             "root": str(checkout.root),
-            "rev": meta.docs_rev or checkout.docs_rev,
+            "rev": meta.rev or checkout.rev,
         },
         "answer_context": format_answer_context(hits),
         "citations": hits_to_citations(hits),

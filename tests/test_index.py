@@ -84,7 +84,7 @@ def test_atomic_write_publishes_complete_index(
     _write_fixture_repo(root)
     embedder = HashEmbedder()
     cfg = DocsEntry(source=str(root), layers=LAYERS)
-    checkout = DocsCheckout(root=root, source="path", docs_rev=None)
+    checkout = DocsCheckout(root=root, origin="file", rev=None)
     meta = build_index(
         "default",
         checkout,
@@ -108,7 +108,7 @@ def test_build_and_search_guides(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     _write_fixture_repo(root)
     embedder = HashEmbedder()
     cfg = DocsEntry(source=str(root), layers=LAYERS)
-    checkout = DocsCheckout(root=root, source="path", docs_rev=None)
+    checkout = DocsCheckout(root=root, origin="file", rev=None)
     meta = build_index(
         "default",
         checkout,
@@ -139,7 +139,7 @@ def test_ascii_boost_api_layer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     _write_fixture_repo(root)
     embedder = HashEmbedder()
     cfg = DocsEntry(source=str(root), layers=LAYERS)
-    checkout = DocsCheckout(root=root, source="path", docs_rev=None)
+    checkout = DocsCheckout(root=root, origin="file", rev=None)
     build_index("default", checkout, cfg, embedder, chunk_max_chars=1500, force=True)
 
     hits, _ = search(
@@ -160,7 +160,7 @@ def test_layer_all_may_mix(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     _write_fixture_repo(root)
     embedder = HashEmbedder()
     cfg = DocsEntry(source=str(root), layers=LAYERS)
-    checkout = DocsCheckout(root=root, source="path", docs_rev=None)
+    checkout = DocsCheckout(root=root, origin="file", rev=None)
     build_index("default", checkout, cfg, embedder, chunk_max_chars=1500, force=True)
     hits, _ = search("default", "Home Overview Panels", embedder, top_k=8, layer="all")
     assert hits

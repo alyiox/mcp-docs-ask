@@ -46,8 +46,8 @@ class IndexMeta:
     docs: str
     embedding_model: str
     fingerprint: str
-    docs_rev: str | None
-    docs_source: str
+    rev: str | None
+    origin: str
     chunk_count: int
     files: list[str]
     layers: list[str] = field(default_factory=list)
@@ -95,9 +95,11 @@ def load_meta(docs_id: str) -> IndexMeta | None:
     if not path.is_file():
         return None
     data = json.loads(path.read_text(encoding="utf-8"))
-    if "docs" not in data:
+    try:
+        return IndexMeta(**data)
+    except TypeError:
+        # Written by a different version of this dataclass; rebuild instead.
         return None
-    return IndexMeta(**data)
 
 
 def _write_index(
@@ -195,8 +197,8 @@ def build_index(
         docs=docs_id,
         embedding_model=embedder.model_name,
         fingerprint=fp,
-        docs_rev=checkout.docs_rev,
-        docs_source=checkout.source,
+        rev=checkout.rev,
+        origin=checkout.origin,
         chunk_count=len(chunks),
         files=rel_files,
         layers=sorted({chunk.layer for chunk in chunks if chunk.layer != UNNAMED_LAYER}),
@@ -320,16 +322,12 @@ def hits_to_citations(hits: list[SearchHit]) -> list[dict[str, Any]]:
     ]
 
 
-# Older indexes stored the configured form as "path"; report it as "file".
-_ORIGIN = {"path": "file"}
-
-
 def index_summary(meta: IndexMeta, root: str | None) -> dict[str, Any]:
     """Index provenance, one shape for ``list_docs`` and ``reindex``."""
     return {
-        "origin": _ORIGIN.get(meta.docs_source, meta.docs_source),
+        "origin": meta.origin,
         "root": root,
-        "rev": meta.docs_rev,
+        "rev": meta.rev,
         "files": len(meta.files),
         "chunks": meta.chunk_count,
         "layers": [name for name in meta.layers if name != UNNAMED_LAYER],
