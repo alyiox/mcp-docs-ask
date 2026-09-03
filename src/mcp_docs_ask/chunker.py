@@ -20,10 +20,10 @@ class Chunk:
     heading: str
     body: str
     layer: str  # named layer, or UNNAMED_LAYER if no layer glob matched
-    embed_text: str
 
     @property
     def search_blob(self) -> str:
+        """Text that gets embedded and ASCII-boosted."""
         return f"{self.path}\n{self.heading}\n{self.body}"
 
 
@@ -75,32 +75,14 @@ def chunk_markdown(
 
     if not matches:
         for part in _split_oversized(cleaned.strip(), chunk_max_chars):
-            embed = f"{rel_path}\n\n{part}"
-            chunks.append(
-                Chunk(
-                    path=rel_path,
-                    heading="",
-                    body=part,
-                    layer=layer,
-                    embed_text=embed,
-                )
-            )
+            chunks.append(Chunk(path=rel_path, heading="", body=part, layer=layer))
         return chunks
 
     # Preamble before first heading
     preamble = cleaned[: matches[0].start()].strip()
     if preamble:
         for part in _split_oversized(preamble, chunk_max_chars):
-            embed = f"{rel_path}\n\n{part}"
-            chunks.append(
-                Chunk(
-                    path=rel_path,
-                    heading="",
-                    body=part,
-                    layer=layer,
-                    embed_text=embed,
-                )
-            )
+            chunks.append(Chunk(path=rel_path, heading="", body=part, layer=layer))
 
     for i, match in enumerate(matches):
         heading = match.group(2).strip()
@@ -110,16 +92,7 @@ def chunk_markdown(
         if not body:
             continue
         for part in _split_oversized(body, chunk_max_chars):
-            embed = f"{rel_path}\n{heading}\n{part}"
-            chunks.append(
-                Chunk(
-                    path=rel_path,
-                    heading=heading,
-                    body=part,
-                    layer=layer,
-                    embed_text=embed,
-                )
-            )
+            chunks.append(Chunk(path=rel_path, heading=heading, body=part, layer=layer))
     return chunks
 
 

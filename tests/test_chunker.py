@@ -61,7 +61,7 @@ The home page helps users see business health at a glance. Supports Summary pane
     assert any(c.heading == "Overview" for c in chunks)
     assert any("business health" in c.body for c in chunks)
     assert all(c.layer == "guides" for c in chunks)
-    assert all("docs/guides" in c.embed_text for c in chunks)
+    assert all("docs/guides" in c.search_blob for c in chunks)
 
 
 def test_chunk_api_layer() -> None:

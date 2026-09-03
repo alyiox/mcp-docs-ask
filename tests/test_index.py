@@ -151,7 +151,7 @@ def test_ascii_boost_api_layer(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) 
     )
     assert hits
     assert all(h.layer == "api" for h in hits)
-    assert any("OrderList" in h.snippet or "OrderController" in h.body for h in hits)
+    assert any("OrderList" in h.snippet or "OrderController" in h.snippet for h in hits)
 
 
 def test_layer_all_may_mix(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

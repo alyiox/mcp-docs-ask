@@ -29,6 +29,9 @@ SCORE_FLOOR = 0.05
 ASCII_BOOST = 0.15
 ASCII_BOOST_CAP = 0.30
 CANDIDATE_MULT = 4
+# Bump when the on-disk chunk or meta shape changes: it feeds the fingerprint,
+# so a stale index rebuilds instead of failing to parse.
+INDEX_FORMAT = "2"
 
 
 @dataclass
@@ -38,7 +41,6 @@ class SearchHit:
     layer: str
     score: float
     snippet: str
-    body: str
 
 
 @dataclass
@@ -60,6 +62,7 @@ def _fingerprint(
     layers: dict[str, tuple[str, ...]],
 ) -> str:
     h = hashlib.sha256()
+    h.update(INDEX_FORMAT.encode())
     h.update(embedding_model.encode())
     h.update(str(chunk_max_chars).encode())
     h.update(json.dumps(layers, sort_keys=True).encode())
@@ -189,7 +192,7 @@ def build_index(
     vectors_list: list[np.ndarray] = []
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i : i + batch_size]
-        vectors_list.append(embedder.embed([c.embed_text for c in batch]))
+        vectors_list.append(embedder.embed([c.search_blob for c in batch]))
     vectors = np.vstack(vectors_list)
 
     rel_files = [p.relative_to(checkout.root).as_posix() for p in files]
@@ -284,7 +287,6 @@ def search(
                 layer=chunk.layer,
                 score=round(score, 4),
                 snippet=truncate_snippet(chunk.body),
-                body=chunk.body,
             )
         )
         if len(hits) >= top_k:
@@ -330,5 +332,5 @@ def index_summary(meta: IndexMeta, root: str | None) -> dict[str, Any]:
         "rev": meta.rev,
         "files": len(meta.files),
         "chunks": meta.chunk_count,
-        "layers": [name for name in meta.layers if name != UNNAMED_LAYER],
+        "layers": meta.layers,
     }

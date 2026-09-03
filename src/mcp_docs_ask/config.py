@@ -77,16 +77,12 @@ class Config:
         return entry.chunk_max_chars if entry.chunk_max_chars is not None else self.chunk_max_chars
 
 
-def default_cache_dir() -> Path:
-    return _cache_dir()
-
-
 def repos_dir() -> Path:
-    return default_cache_dir() / "repos"
+    return _cache_dir() / "repos"
 
 
 def indexes_dir() -> Path:
-    return default_cache_dir() / "indexes"
+    return _cache_dir() / "indexes"
 
 
 def _parse_desc(raw: Any, field_name: str) -> str:
