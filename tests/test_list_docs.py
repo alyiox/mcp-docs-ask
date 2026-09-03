@@ -84,7 +84,7 @@ def test_list_docs_returns_sanitized_layers(
             },
         ],
     }
-    # Must not leak private source paths/URLs.
+    # Never echoes the configured source string itself (it can carry credentials).
     dumped = str(result)
     assert "example.invalid" not in dumped
     assert "/private/local" not in dumped
@@ -114,6 +114,5 @@ def test_list_docs_reports_built_index(tmp_path: Path, monkeypatch: pytest.Monke
     assert entry["index"]["chunk_count"] > 0
     assert entry["index"]["layers"] == ["guides"]
     assert entry["index"]["embedding_model"] == "hash-embedder/v1"
-    # Discovery must not disclose where the docs live.
-    assert entry["index"]["root"] is None
-    assert str(docs) not in str(entry)
+    # Root is disclosed so a host can build full paths from citation paths.
+    assert entry["index"]["root"] == str(docs.resolve())

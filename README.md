@@ -154,7 +154,9 @@ are `all` plus the named layer ids — see **Layers** above.
 
 `list_docs` and `reindex` return the same `index` keys: `origin` (`path` or
 `git`), `root`, `rev`, `file_count`, `chunk_count`, `layers`, `embedding_model`.
-`root` is `null` in `list_docs` so discovery never discloses where the docs live.
+`root` is the local checkout — the source dir for a `path` origin, the cache
+clone under `~/.cache/mcp-docs-ask/repos/<docs-id>/` for a `git` one. It is
+`null` only when a built index outlived its source directory.
 
 `ask_docs` carries only the two answer-scoped keys, `root` and `rev`: the
 checkout that produced the passages, and the revision they came from.

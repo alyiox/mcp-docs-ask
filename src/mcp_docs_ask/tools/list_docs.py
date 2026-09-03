@@ -4,20 +4,26 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..config import Config
+from ..config import Config, DocsEntry
 from ..index import index_summary, load_meta
+from ..sync import docs_location
 
 
-def _index_state(docs_id: str) -> dict[str, Any] | None:
+def _index_state(docs_id: str, entry: DocsEntry) -> dict[str, Any] | None:
     """Built-index state for a collection, or None when never indexed.
 
-    ``root`` stays null on this surface: discovery must not leak configured
-    source paths or URLs. ask_docs and reindex disclose the checkout root.
+    ``root`` is the local checkout, so a host can join it with a citation path
+    without asking a question first. Resolved without cloning or fetching.
     """
     meta = load_meta(docs_id)
     if meta is None:
         return None
-    return index_summary(meta, root=None)
+    try:
+        root: str | None = str(docs_location(docs_id, entry)[0])
+    except FileNotFoundError:
+        # Index outlived its source dir; report state without a root.
+        root = None
+    return index_summary(meta, root)
 
 
 def list_docs_impl(config: Config) -> dict[str, Any]:
@@ -36,7 +42,7 @@ def list_docs_impl(config: Config) -> dict[str, Any]:
                 "top_k": config.top_k_for(docs_id),
                 "chunk_max_chars": config.chunk_max_chars_for(docs_id),
                 "layers": configured_layers,
-                "index": _index_state(docs_id),
+                "index": _index_state(docs_id, entry),
             }
         )
     return {
