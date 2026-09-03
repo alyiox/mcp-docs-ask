@@ -320,9 +320,8 @@ def hits_to_citations(hits: list[SearchHit]) -> list[dict[str, Any]]:
     ]
 
 
-# Config records how the source was written (a path or a URL); callers care who
-# owns the checkout. A local dir is often a git repo too, so never say "git" here.
-_ORIGIN = {"path": "local", "git": "managed"}
+# Older indexes stored the configured form as "path"; report it as "file".
+_ORIGIN = {"path": "file"}
 
 
 def index_summary(meta: IndexMeta, root: str | None) -> dict[str, Any]:
@@ -331,8 +330,7 @@ def index_summary(meta: IndexMeta, root: str | None) -> dict[str, Any]:
         "origin": _ORIGIN.get(meta.docs_source, meta.docs_source),
         "root": root,
         "rev": meta.docs_rev,
-        "file_count": len(meta.files),
-        "chunk_count": meta.chunk_count,
+        "files": len(meta.files),
+        "chunks": meta.chunk_count,
         "layers": [name for name in meta.layers if name != UNNAMED_LAYER],
-        "embedding_model": meta.embedding_model,
     }

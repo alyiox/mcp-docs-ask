@@ -178,15 +178,14 @@ def test_reindex_local(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     out = reindex_impl(config, HashEmbedder(model_name="hash-embedder/v1"))
     assert out["docs"] == "default"
     assert out["index"] == {
-        "origin": "local",
+        "origin": "file",
         "root": str(docs.resolve()),
         "rev": None,
-        "file_count": 2,
-        "chunk_count": out["index"]["chunk_count"],
+        "files": 2,
+        "chunks": out["index"]["chunks"],
         "layers": [],
-        "embedding_model": "hash-embedder/v1",
     }
-    assert out["index"]["chunk_count"] > 0
+    assert out["index"]["chunks"] > 0
 
 
 def test_config_missing_docs_error(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
