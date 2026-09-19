@@ -4,6 +4,28 @@ version = "0.3.0"
 description = "MCP server for local retrieval over markdown documentation"
 readme = "README.md"
 requires-python = ">=3.13"
+keywords = [
+    "documentation",
+    "markdown",
+    "retrieval",
+    "search",
+    "mcp",
+    "ai",
+    "local-docs",
+]
+license = { text = "MIT" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Documentation",
+    "Topic :: Text Processing :: Indexing",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
 dependencies = [
     "mcp[cli]>=2.0.0",
     "numpy>=2.0",
