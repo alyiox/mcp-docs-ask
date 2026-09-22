@@ -1,4 +1,4 @@
-"""MCPServer entrypoint for Docs Ask (local docs RAG)."""
+"""MCPServer entrypoint for Documentation Search."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
+from importlib.metadata import version
 from typing import Annotated, Any
 
 from mcp.server.mcpserver import Context, MCPServer
@@ -49,7 +50,12 @@ async def _lifespan(app: MCPServer) -> AsyncIterator[ServerContext]:
     yield ctx
 
 
-mcp: MCPServer = MCPServer("docs-ask", lifespan=_lifespan)
+mcp: MCPServer = MCPServer(
+    "mcp-docs-ask",
+    title="Documentation Search",
+    version=version("mcp-docs-ask"),
+    lifespan=_lifespan,
+)
 
 
 def _ctx(ctx: Context[ServerContext, Any]) -> ServerContext:
