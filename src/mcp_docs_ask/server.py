@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -167,6 +168,9 @@ def reindex(
 
 
 def main() -> None:
+    if "--version" in sys.argv[1:] or "-V" in sys.argv[1:]:
+        print(f"mcp-docs-ask {version('mcp-docs-ask')}")
+        return
     logging.basicConfig(
         level=os.environ.get("MCP_DOCS_ASK_LOG_LEVEL", "INFO"),
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
