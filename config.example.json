@@ -29,6 +29,7 @@
     "docs": "product",
     "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
     "top_k": 8,
-    "chunk_max_chars": 1500
+    "chunk_max_chars": 1500,
+    "max_context_chars": 8000
   }
 }

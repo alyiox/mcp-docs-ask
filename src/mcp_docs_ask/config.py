@@ -23,6 +23,7 @@ DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 DEFAULT_INCLUDE = ["**/*.md"]
 DEFAULT_TOP_K = 8
 DEFAULT_CHUNK_MAX_CHARS = 1500
+DEFAULT_MAX_CONTEXT_CHARS = 8000
 DEFAULT_REF = "main"
 
 
@@ -43,6 +44,7 @@ class DocsEntry:
     embedding_model: str | None = None
     top_k: int | None = None
     chunk_max_chars: int | None = None
+    max_context_chars: int | None = None
 
     def layer_patterns(self) -> dict[str, tuple[str, ...]]:
         """Layer name → include globs (for chunking / fingerprint)."""
@@ -56,6 +58,7 @@ class Config:
     embedding_model: str = DEFAULT_EMBEDDING_MODEL
     top_k: int = DEFAULT_TOP_K
     chunk_max_chars: int = DEFAULT_CHUNK_MAX_CHARS
+    max_context_chars: int = DEFAULT_MAX_CONTEXT_CHARS
 
     def doc(self, name: str | None = None) -> DocsEntry:
         key = name or self.default_docs
@@ -75,6 +78,12 @@ class Config:
     def chunk_max_chars_for(self, docs_id: str | None = None) -> int:
         entry = self.doc(docs_id)
         return entry.chunk_max_chars if entry.chunk_max_chars is not None else self.chunk_max_chars
+
+    def max_context_chars_for(self, docs_id: str | None = None) -> int:
+        entry = self.doc(docs_id)
+        if entry.max_context_chars is not None:
+            return entry.max_context_chars
+        return self.max_context_chars
 
 
 def repos_dir() -> Path:
@@ -147,6 +156,15 @@ def _parse_optional_chunk_max_chars(raw: Any, field_name: str) -> int | None:
     return chunk_max_chars
 
 
+def _parse_optional_max_context_chars(raw: Any, field_name: str) -> int | None:
+    if raw is None:
+        return None
+    max_context_chars = int(raw)
+    if max_context_chars < 500:
+        raise ValueError(f"{field_name} must be >= 500")
+    return max_context_chars
+
+
 def _parse_docs_entry(raw: dict[str, Any], docs_id: str) -> DocsEntry:
     source = raw.get("source")
     if not isinstance(source, str) or not source.strip():
@@ -176,10 +194,13 @@ def _parse_docs_entry(raw: dict[str, Any], docs_id: str) -> DocsEntry:
         chunk_max_chars=_parse_optional_chunk_max_chars(
             raw.get("chunk_max_chars"), f"{prefix}.chunk_max_chars"
         ),
+        max_context_chars=_parse_optional_max_context_chars(
+            raw.get("max_context_chars"), f"{prefix}.max_context_chars"
+        ),
     )
 
 
-def _parse_default_block(raw: Any, docs: dict[str, DocsEntry]) -> tuple[str, str, int, int]:
+def _parse_default_block(raw: Any, docs: dict[str, DocsEntry]) -> tuple[str, str, int, int, int]:
     if not isinstance(raw, dict):
         raise ValueError("config.default must be an object")
     default_docs = raw.get("docs")
@@ -201,8 +222,13 @@ def _parse_default_block(raw: Any, docs: dict[str, DocsEntry]) -> tuple[str, str
     )
     if chunk_max_chars is None:
         chunk_max_chars = DEFAULT_CHUNK_MAX_CHARS
+    max_context_chars = _parse_optional_max_context_chars(
+        raw.get("max_context_chars"), "default.max_context_chars"
+    )
+    if max_context_chars is None:
+        max_context_chars = DEFAULT_MAX_CONTEXT_CHARS
 
-    return default_docs, embedding_model.strip(), top_k, chunk_max_chars
+    return default_docs, embedding_model.strip(), top_k, chunk_max_chars, max_context_chars
 
 
 def _config_from_data(data: dict[str, Any]) -> Config:
@@ -216,7 +242,7 @@ def _config_from_data(data: dict[str, Any]) -> Config:
             raise ValueError(f"docs.{name} must be an object")
         docs[name] = _parse_docs_entry(raw, name)
 
-    default_docs, embedding_model, top_k, chunk_max_chars = _parse_default_block(
+    default_docs, embedding_model, top_k, chunk_max_chars, max_context_chars = _parse_default_block(
         data.get("default"), docs
     )
     return Config(
@@ -225,6 +251,7 @@ def _config_from_data(data: dict[str, Any]) -> Config:
         embedding_model=embedding_model,
         top_k=top_k,
         chunk_max_chars=chunk_max_chars,
+        max_context_chars=max_context_chars,
     )
 
 

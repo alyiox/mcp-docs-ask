@@ -7,6 +7,7 @@ from typing import Any
 from ..config import Config
 from ..embedder import Embedder
 from ..index import (
+    assemble_context,
     build_index,
     format_answer_context,
     hits_to_citations,
@@ -57,6 +58,7 @@ def ask_docs_impl(
         top_k=k,
         layer=layer_norm,
     )
+    hits = assemble_context(hits, max_chars=config.max_context_chars_for(docs_id))
     return {
         "docs": docs_id,
         "layer": layer_norm,

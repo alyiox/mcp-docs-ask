@@ -10,6 +10,7 @@ import pytest
 from mcp_docs_ask.config import (
     DEFAULT_CHUNK_MAX_CHARS,
     DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_MAX_CONTEXT_CHARS,
     DEFAULT_TOP_K,
     LayerEntry,
     load_config,
@@ -42,6 +43,7 @@ def test_load_config(tmp_path: Path) -> None:
                     },
                     "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
                     "top_k": 3,
+                    "max_context_chars": 4000,
                 }
             },
             "default": {
@@ -49,6 +51,7 @@ def test_load_config(tmp_path: Path) -> None:
                 "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
                 "top_k": 6,
                 "chunk_max_chars": 1200,
+                "max_context_chars": 12000,
             },
         },
     )
@@ -60,6 +63,8 @@ def test_load_config(tmp_path: Path) -> None:
     assert cfg.top_k_for("product") == 3
     assert cfg.embedding_model_for("product") == ("sentence-transformers/all-MiniLM-L6-v2")
     assert cfg.chunk_max_chars_for("product") == 1200
+    assert cfg.max_context_chars == 12000
+    assert cfg.max_context_chars_for("product") == 4000
     entry = cfg.doc("product")
     assert entry.include == ("docs/**/*.md",)
     assert entry.desc == "Example docs"
@@ -85,6 +90,7 @@ def test_load_config_inherits_defaults(tmp_path: Path) -> None:
     assert cfg.embedding_model_for("notes") == DEFAULT_EMBEDDING_MODEL
     assert cfg.top_k_for("notes") == DEFAULT_TOP_K
     assert cfg.chunk_max_chars_for("notes") == DEFAULT_CHUNK_MAX_CHARS
+    assert cfg.max_context_chars_for("notes") == DEFAULT_MAX_CONTEXT_CHARS
 
 
 def test_load_config_missing(tmp_path: Path) -> None:
@@ -167,4 +173,16 @@ def test_load_config_rejects_invalid_per_docs_top_k(tmp_path: Path) -> None:
         },
     )
     with pytest.raises(ValueError, match="top_k"):
+        load_config(path)
+
+
+def test_load_config_rejects_small_max_context_chars(tmp_path: Path) -> None:
+    path = _write(
+        tmp_path / "config.json",
+        {
+            "docs": {"default": {"source": "/docs"}},
+            "default": {"docs": "default", "max_context_chars": 100},
+        },
+    )
+    with pytest.raises(ValueError, match="default.max_context_chars"):
         load_config(path)

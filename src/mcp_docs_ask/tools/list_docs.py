@@ -41,6 +41,7 @@ def list_docs_impl(config: Config) -> dict[str, Any]:
                 "embedding_model": config.embedding_model_for(docs_id),
                 "top_k": config.top_k_for(docs_id),
                 "chunk_max_chars": config.chunk_max_chars_for(docs_id),
+                "max_context_chars": config.max_context_chars_for(docs_id),
                 "layers": configured_layers,
                 "index": _index_state(docs_id, entry),
             }
@@ -52,6 +53,7 @@ def list_docs_impl(config: Config) -> dict[str, Any]:
             "embedding_model": config.embedding_model,
             "top_k": config.top_k,
             "chunk_max_chars": config.chunk_max_chars,
+            "max_context_chars": config.max_context_chars,
         },
         "docs": docs,
     }

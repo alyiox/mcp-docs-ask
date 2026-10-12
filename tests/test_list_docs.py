@@ -57,6 +57,7 @@ def test_list_docs_returns_sanitized_layers(
             "embedding_model": ("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"),
             "top_k": 8,
             "chunk_max_chars": 1500,
+            "max_context_chars": 8000,
         },
         "docs": [
             {
@@ -66,6 +67,7 @@ def test_list_docs_returns_sanitized_layers(
                 "embedding_model": ("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"),
                 "top_k": 8,
                 "chunk_max_chars": 1500,
+                "max_context_chars": 8000,
                 "layers": [],
                 "index": None,
             },
@@ -76,6 +78,7 @@ def test_list_docs_returns_sanitized_layers(
                 "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
                 "top_k": 3,
                 "chunk_max_chars": 1500,
+                "max_context_chars": 8000,
                 "layers": [
                     {"id": "guides", "desc": "Guides"},
                     {"id": "api", "desc": "API"},

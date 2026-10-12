@@ -79,7 +79,8 @@ Config path: `~/.config/mcp-docs-ask/config.json`
     "docs": "product",
     "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
     "top_k": 8,
-    "chunk_max_chars": 1500
+    "chunk_max_chars": 1500,
+    "max_context_chars": 8000
   }
 }
 ```
@@ -87,7 +88,7 @@ Config path: `~/.config/mcp-docs-ask/config.json`
 `product` is a git URL (`ref` applies). `team-notes` is a filesystem path (`ref` unused).
 Optional `desc` on each docs collection and layer helps agents pick the right target.
 
-`embedding_model`, `top_k`, and `chunk_max_chars` resolve as:
+`embedding_model`, `top_k`, `chunk_max_chars`, and `max_context_chars` resolve as:
 `docs.<id>.X` → `default.X` → built-in. Omit per-docs keys to inherit.
 
 **Embedding model recommendation**
@@ -114,10 +115,12 @@ Changing `embedding_model` requires a `reindex` (the on-disk index stores the mo
 | `docs.<id>.embedding_model` | Optional override (see recommendation above) |
 | `docs.<id>.top_k` | Optional override for default retrieval count |
 | `docs.<id>.chunk_max_chars` | Optional override for max body chars per heading chunk |
+| `docs.<id>.max_context_chars` | Optional override for the `answer_context` passage budget |
 | `default.docs` | Default docs collection id |
 | `default.embedding_model` | Default sentence-transformers model id |
 | `default.top_k` | Default retrieval count |
 | `default.chunk_max_chars` | Default max body chars per heading chunk |
+| `default.max_context_chars` | Default total passage chars in `answer_context` (min 500) |
 
 **Layers** partition indexed files by path glob. First match wins. Names are
 case-insensitive; `all` is reserved (cannot be configured as a layer name).
@@ -145,7 +148,7 @@ Cache layout:
 | `reindex` | Sync git source (if URL) and rebuild the vector index |
 
 `list_docs` returns a `default` block with the same keys as the config `default`
-block (`docs`, `embedding_model`, `top_k`, `chunk_max_chars`), plus a `docs` list
+block (`docs`, `embedding_model`, `top_k`, `chunk_max_chars`, `max_context_chars`), plus a `docs` list
 where each entry carries its resolved values, a `default` flag, and an `index`
 block (`null` when the collection has never been indexed). Valid `layer` values
 are `all` plus the named layer ids — see **Layers** above.
@@ -165,6 +168,19 @@ the exact indexed content.
 
 `ask_docs` carries only the two answer-scoped keys, `root` and `rev`: the
 checkout that produced the passages, and the revision they came from.
+
+### Passages
+
+`ask_docs` retrieves up to `top_k` chunks, then assembles them into passages:
+
+- Each passage is the full chunk text, with line breaks kept, labeled with its
+  heading path (`Guide > Configuration > Layers`).
+- Retrieved parts of one oversized section are joined back in file order;
+  `…` marks parts in between that did not rank.
+- Passages fill `max_context_chars` best-first. The one that overflows is
+  trimmed at a line break and ends with `…`; the first passage is always kept.
+
+So `citations` can hold fewer entries than `top_k`.
 
 ### Reading a full source file
 

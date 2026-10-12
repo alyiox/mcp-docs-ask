@@ -8,7 +8,7 @@ import logging
 import os
 import re
 import shutil
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +29,11 @@ SCORE_FLOOR = 0.05
 ASCII_BOOST = 0.15
 ASCII_BOOST_CAP = 0.30
 CANDIDATE_MULT = 4
+# Below this much room left in the budget, drop the next passage rather than
+# trim it to a stub.
+MIN_TRIMMED_CHARS = 200
+GAP_MARKER = "\n\n…\n\n"
+TRIM_MARKER = "\n…"
 # Bump when the on-disk chunk or meta shape changes: it feeds the fingerprint,
 # so a stale index rebuilds instead of failing to parse.
 INDEX_FORMAT = "3"
@@ -40,7 +45,8 @@ class SearchHit:
     heading: str
     layer: str
     score: float
-    snippet: str
+    text: str
+    seq: int = 0
 
 
 @dataclass
@@ -220,13 +226,6 @@ def ascii_boost(tokens: list[str], blob: str, path: str) -> float:
     return min(ASCII_BOOST_CAP, matches * ASCII_BOOST)
 
 
-def truncate_snippet(text: str, max_chars: int = 400) -> str:
-    text = " ".join(text.split())
-    if len(text) <= max_chars:
-        return text
-    return text[: max_chars - 1] + "..."
-
-
 def search(
     docs_id: str,
     question: str,
@@ -286,12 +285,62 @@ def search(
                 heading=chunk.heading,
                 layer=chunk.layer,
                 score=round(score, 4),
-                snippet=truncate_snippet(chunk.body),
+                text=chunk.body,
+                seq=chunk.seq,
             )
         )
         if len(hits) >= top_k:
             break
     return hits, meta
+
+
+def _merge_sections(hits: list[SearchHit]) -> list[SearchHit]:
+    """Join hits from the same file section into one passage, in file order.
+
+    A section keeps the score of its best part; sections stay best-first.
+    """
+    groups: dict[tuple[str, str], list[SearchHit]] = {}
+    for hit in hits:
+        groups.setdefault((hit.path, hit.heading), []).append(hit)
+    merged: list[SearchHit] = []
+    for parts in groups.values():
+        best = parts[0]
+        parts.sort(key=lambda h: h.seq)
+        text = parts[0].text
+        for prev, cur in zip(parts, parts[1:], strict=False):
+            # Adjacent parts were one block before splitting; mark skipped ones.
+            text += ("\n" if cur.seq == prev.seq + 1 else GAP_MARKER) + cur.text
+        merged.append(replace(best, text=text, seq=parts[0].seq))
+    return merged
+
+
+def _fit_budget(hits: list[SearchHit], max_chars: int) -> list[SearchHit]:
+    """Keep passages best-first until ``max_chars`` of text is used.
+
+    The passage that overflows is trimmed at a line break and ends the list;
+    the first passage is always kept, trimmed if need be.
+    """
+    kept: list[SearchHit] = []
+    used = 0
+    for hit in hits:
+        remaining = max_chars - used
+        if len(hit.text) <= remaining:
+            kept.append(hit)
+            used += len(hit.text)
+            continue
+        if kept and remaining < MIN_TRIMMED_CHARS:
+            break
+        cut = hit.text.rfind("\n", 0, remaining)
+        if cut < remaining // 2:
+            cut = remaining
+        kept.append(replace(hit, text=hit.text[:cut].rstrip() + TRIM_MARKER))
+        break
+    return kept
+
+
+def assemble_context(hits: list[SearchHit], *, max_chars: int) -> list[SearchHit]:
+    """Turn ranked hits into the passages handed to the host."""
+    return _fit_budget(_merge_sections(hits), max_chars)
 
 
 def format_answer_context(hits: list[SearchHit]) -> str:
@@ -304,7 +353,7 @@ def format_answer_context(hits: list[SearchHit]) -> str:
     for i, hit in enumerate(hits, start=1):
         heading = hit.heading or "(preamble)"
         layer_part = f" · layer={hit.layer}" if hit.layer != UNNAMED_LAYER else ""
-        parts.append(f"[{i}] {hit.path} · {heading}{layer_part} · score={hit.score}\n{hit.snippet}")
+        parts.append(f"[{i}] {hit.path} · {heading}{layer_part} · score={hit.score}\n{hit.text}")
     return "\n\n".join(parts)
 
 
