@@ -72,6 +72,15 @@ def test_ascii_tokens() -> None:
     assert "OrderList" in toks
     assert "OrderController" in toks
     assert "/Preferences" in toks
+    assert "Where" not in toks
+    assert "and" not in toks
+
+
+def test_ascii_tokens_skip_plain_words() -> None:
+    assert ascii_tokens("How do I configure layers for the guides?") == []
+    assert ascii_tokens("Is API_KEY read from config.json.") == ["API_KEY", "config.json"]
+    toks = ascii_tokens("Does v2.1 support Claude-Code and HTTP?")
+    assert toks == ["v2.1", "Claude-Code", "HTTP"]
 
 
 def test_ascii_boost_is_capped() -> None:

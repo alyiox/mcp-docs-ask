@@ -22,6 +22,9 @@ from .sync import DocsCheckout
 logger = logging.getLogger(__name__)
 
 _ASCII_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z0-9_./-]{2,}|/[A-Za-z][A-Za-z0-9_/-]*")
+# Separator, digit, or a capital past the first letter: OrderList, API_KEY,
+# config.json, /Preferences. Plain words ("configure", "Where") don't qualify.
+_IDENTIFIER_HINT_RE = re.compile(r"[_./0-9-]|.[A-Z]")
 META_NAME = "meta.json"
 CHUNKS_NAME = "chunks.json"
 VECTORS_NAME = "vectors.npy"
@@ -217,7 +220,14 @@ def build_index(
 
 
 def ascii_tokens(query: str) -> list[str]:
-    return list(dict.fromkeys(_ASCII_TOKEN_RE.findall(query)))
+    """Identifier-like tokens in ``query``, deduplicated in order."""
+    tokens: list[str] = []
+    for raw in _ASCII_TOKEN_RE.findall(query):
+        # Drop sentence punctuation the token pattern swallows ("config.json.")
+        token = raw.rstrip(".-")
+        if len(token) >= 3 and _IDENTIFIER_HINT_RE.search(token):
+            tokens.append(token)
+    return list(dict.fromkeys(tokens))
 
 
 def ascii_boost(tokens: list[str], blob: str, path: str) -> float:
