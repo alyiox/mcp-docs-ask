@@ -129,3 +129,32 @@ def test_split_parts_share_heading_and_number_in_order() -> None:
     assert "\n".join(c.body for c in big) == body
     assert chunks[0].heading == ""
     assert chunks[-1].heading == "Next"
+
+
+def test_hash_lines_in_code_fences_are_not_headings() -> None:
+    md = """# Guide
+
+## Install
+
+```bash
+# install deps
+uv sync
+```
+
+~~~
+## not a heading either
+~~~
+
+## Usage
+
+Run it.
+"""
+    chunks = chunk_markdown("guide.md", md)
+    assert [c.heading for c in chunks] == ["Guide > Install", "Guide > Usage"]
+    assert "# install deps" in chunks[0].body
+    assert "## not a heading either" in chunks[0].body
+
+
+def test_unclosed_fence_swallows_rest_of_file() -> None:
+    md = "# Guide\n\n```\n# inside\n\n## still inside\n"
+    assert [c.heading for c in chunk_markdown("guide.md", md)] == ["Guide"]

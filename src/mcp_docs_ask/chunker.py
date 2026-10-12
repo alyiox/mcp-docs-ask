@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 
 _HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.MULTILINE)
+_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})", re.MULTILINE)
 
 # Sentinel for paths that match no named-layer glob (not exposed as a tool filter).
 UNNAMED_LAYER = ""
@@ -45,6 +46,23 @@ def strip_html_comments(text: str) -> str:
     return _HTML_COMMENT_RE.sub("", text)
 
 
+def _fenced_spans(text: str) -> list[tuple[int, int]]:
+    """Offsets of fenced code blocks; an unclosed fence runs to the end."""
+    spans: list[tuple[int, int]] = []
+    opener: str | None = None
+    start = 0
+    for match in _FENCE_RE.finditer(text):
+        fence = match.group(1)
+        if opener is None:
+            opener, start = fence, match.start()
+        elif fence[0] == opener[0] and len(fence) >= len(opener):
+            spans.append((start, match.end()))
+            opener = None
+    if opener is not None:
+        spans.append((start, len(text)))
+    return spans
+
+
 def _split_oversized(body: str, max_chars: int) -> list[str]:
     if len(body) <= max_chars:
         return [body] if body.strip() else []
@@ -73,7 +91,13 @@ def chunk_markdown(
 ) -> list[Chunk]:
     cleaned = strip_html_comments(text)
     layer = infer_layer(rel_path, layers)
-    matches = list(_HEADING_RE.finditer(cleaned))
+    # A "# comment" line in a shell block is not a heading.
+    fenced = _fenced_spans(cleaned)
+    matches = [
+        m
+        for m in _HEADING_RE.finditer(cleaned)
+        if not any(start <= m.start() < end for start, end in fenced)
+    ]
     chunks: list[Chunk] = []
 
     def add(heading: str, body: str) -> None:
