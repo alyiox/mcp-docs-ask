@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from mcp_docs_ask.chunker import (
+    HEADING_SEP,
     UNNAMED_LAYER,
     chunk_markdown,
     infer_layer,
@@ -58,7 +59,7 @@ The home page helps users see business health at a glance. Supports Summary pane
         chunk_max_chars=1500,
         layers=layers,
     )
-    assert any(c.heading == "Overview" for c in chunks)
+    assert any(c.heading == f"Home Overview{HEADING_SEP}Overview" for c in chunks)
     assert any("business health" in c.body for c in chunks)
     assert all(c.layer == "guides" for c in chunks)
     assert all("docs/guides" in c.search_blob for c in chunks)
@@ -77,3 +78,54 @@ def test_chunk_api_layer() -> None:
     chunks = chunk_markdown("docs/api/overview.md", md, layers=layers)
     assert chunks
     assert chunks[0].layer == "api"
+
+
+def test_heading_path_tracks_ancestors() -> None:
+    md = """# Guide
+
+## Configuration
+
+Intro.
+
+### Layers
+
+Layer text.
+
+### Embedding
+
+Model text.
+
+## Usage
+
+Usage text.
+
+# Appendix
+
+Appendix text.
+"""
+    headings = [c.heading for c in chunk_markdown("guide.md", md)]
+    assert headings == [
+        "Guide > Configuration",
+        "Guide > Configuration > Layers",
+        "Guide > Configuration > Embedding",
+        "Guide > Usage",
+        "Appendix",
+    ]
+
+
+def test_heading_path_skips_levels() -> None:
+    md = "# Top\n\n### Deep\n\nDeep text.\n\n## Mid\n\nMid text.\n"
+    headings = [c.heading for c in chunk_markdown("doc.md", md)]
+    assert headings == ["Top > Deep", "Top > Mid"]
+
+
+def test_split_parts_share_heading_and_number_in_order() -> None:
+    body = "\n".join(f"line {i:03d} " + "x" * 40 for i in range(20))
+    md = f"Preamble.\n\n# Big\n\n{body}\n\n# Next\n\nTail.\n"
+    chunks = chunk_markdown("big.md", md, chunk_max_chars=300)
+    assert [c.seq for c in chunks] == list(range(len(chunks)))
+    big = [c for c in chunks if c.heading == "Big"]
+    assert len(big) > 1
+    assert "\n".join(c.body for c in big) == body
+    assert chunks[0].heading == ""
+    assert chunks[-1].heading == "Next"

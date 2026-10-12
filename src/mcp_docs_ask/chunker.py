@@ -12,14 +12,17 @@ _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*$", re.MULTILINE)
 
 # Sentinel for paths that match no named-layer glob (not exposed as a tool filter).
 UNNAMED_LAYER = ""
+# Joins ancestor headings into a chunk's heading path.
+HEADING_SEP = " > "
 
 
 @dataclass(frozen=True)
 class Chunk:
     path: str  # repo-relative posix path
-    heading: str
+    heading: str  # ancestor headings joined by HEADING_SEP; "" for preamble
     body: str
     layer: str  # named layer, or UNNAMED_LAYER if no layer glob matched
+    seq: int = 0  # position within the file, so split parts can be rejoined in order
 
     @property
     def search_blob(self) -> str:
@@ -73,26 +76,29 @@ def chunk_markdown(
     matches = list(_HEADING_RE.finditer(cleaned))
     chunks: list[Chunk] = []
 
+    def add(heading: str, body: str) -> None:
+        for part in _split_oversized(body, chunk_max_chars):
+            chunks.append(
+                Chunk(path=rel_path, heading=heading, body=part, layer=layer, seq=len(chunks))
+            )
+
     if not matches:
-        for part in _split_oversized(cleaned.strip(), chunk_max_chars):
-            chunks.append(Chunk(path=rel_path, heading="", body=part, layer=layer))
+        add("", cleaned.strip())
         return chunks
 
     # Preamble before first heading
-    preamble = cleaned[: matches[0].start()].strip()
-    if preamble:
-        for part in _split_oversized(preamble, chunk_max_chars):
-            chunks.append(Chunk(path=rel_path, heading="", body=part, layer=layer))
+    add("", cleaned[: matches[0].start()].strip())
 
+    # (level, title) of the current heading and its ancestors
+    stack: list[tuple[int, str]] = []
     for i, match in enumerate(matches):
-        heading = match.group(2).strip()
+        level = len(match.group(1))
+        while stack and stack[-1][0] >= level:
+            stack.pop()
+        stack.append((level, match.group(2).strip()))
         start = match.end()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(cleaned)
-        body = cleaned[start:end].strip()
-        if not body:
-            continue
-        for part in _split_oversized(body, chunk_max_chars):
-            chunks.append(Chunk(path=rel_path, heading=heading, body=part, layer=layer))
+        add(HEADING_SEP.join(title for _, title in stack), cleaned[start:end].strip())
     return chunks
 
 

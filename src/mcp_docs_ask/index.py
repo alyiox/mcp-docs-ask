@@ -31,7 +31,7 @@ ASCII_BOOST_CAP = 0.30
 CANDIDATE_MULT = 4
 # Bump when the on-disk chunk or meta shape changes: it feeds the fingerprint,
 # so a stale index rebuilds instead of failing to parse.
-INDEX_FORMAT = "2"
+INDEX_FORMAT = "3"
 
 
 @dataclass

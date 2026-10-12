@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+import mcp_docs_ask.index as index_module
 from mcp_docs_ask.config import DocsEntry, LayerEntry
 from mcp_docs_ask.embedder import HashEmbedder
 from mcp_docs_ask.index import (
@@ -17,6 +18,7 @@ from mcp_docs_ask.index import (
     ascii_tokens,
     build_index,
     index_dir,
+    load_meta,
     search,
 )
 from mcp_docs_ask.sync import DocsCheckout
@@ -164,3 +166,21 @@ def test_layer_all_may_mix(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
     build_index("default", checkout, cfg, embedder, chunk_max_chars=1500, force=True)
     hits, _ = search("default", "Home Overview Panels", embedder, top_k=8, layer="all")
     assert hits
+
+
+def test_index_format_change_triggers_rebuild(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MCP_DOCS_ASK_CACHE", str(tmp_path / "cache"))
+    root = tmp_path / "docs"
+    _write_fixture_repo(root)
+    embedder = HashEmbedder()
+    cfg = DocsEntry(source=str(root), layers=LAYERS)
+    checkout = DocsCheckout(root=root, origin="file", rev=None)
+    monkeypatch.setattr(index_module, "INDEX_FORMAT", "old")
+    old = build_index("default", checkout, cfg, embedder, chunk_max_chars=1500)
+    monkeypatch.undo()
+    monkeypatch.setenv("MCP_DOCS_ASK_CACHE", str(tmp_path / "cache"))
+    new = build_index("default", checkout, cfg, embedder, chunk_max_chars=1500)
+    assert new.fingerprint != old.fingerprint
+    assert load_meta("default") == new
