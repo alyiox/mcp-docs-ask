@@ -15,9 +15,12 @@ passages and citations; the MCP host (Cursor / Claude) synthesizes the answer.
 
 ## Features
 
-- `ask_docs` retrieval with configurable path-based layer filters
-- `list_docs` discovery for configured docs collections and layer filters
-- `reindex` rebuilds the local vector index; for git URL sources it also fetches updates
+- Any markdown repo as a source: a local path, or a git URL fetched on `reindex`
+- Runs locally: sentence-transformers embeddings, no API keys, no answer LLM
+- Path-based layers to narrow a search (e.g. guides vs. API reference)
+- Full passages with heading paths and `[n]` citations, capped by a character budget
+- No manual rebuilds: the index refreshes itself when local files, config, or the
+  embedding model change
 
 ## Requirements
 
@@ -38,7 +41,7 @@ mkdir -p ~/.config/mcp-docs-ask
 cp config.example.json ~/.config/mcp-docs-ask/config.json
 # Prefer a local checkout while developing:
 #   set docs.<id>.source to your docs repo path
-npx -y @modelcontextprotocol/inspector uv run mcp-docs-ask
+npx -y @modelcontextprotocol/inspector@latest uv run mcp-docs-ask
 ```
 
 ## Configuration
@@ -101,7 +104,7 @@ Any Hugging Face id loadable by `sentence-transformers` works. Pick by language 
 | **Chinese-only** | `BAAI/bge-small-zh-v1.5` |
 | **Multilingual** (~50 langs) | `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` |
 
-Changing `embedding_model` requires a `reindex` (the on-disk index stores the model name).
+Changing `embedding_model` rebuilds the index on the next call; no `reindex` needed.
 
 | Field | Description |
 |---|---|
@@ -148,10 +151,11 @@ Cache layout:
 | `reindex` | Sync git source (if URL) and rebuild the vector index |
 
 `list_docs` returns a `default` block with the same keys as the config `default`
-block (`docs`, `embedding_model`, `top_k`, `chunk_max_chars`, `max_context_chars`), plus a `docs` list
-where each entry carries its resolved values, a `default` flag, and an `index`
-block (`null` when the collection has never been indexed). Valid `layer` values
-are `all` plus the named layer ids — see **Layers** above.
+block (`docs`, `embedding_model`, `top_k`, `chunk_max_chars`,
+`max_context_chars`), plus a `docs` list where each entry carries its resolved
+values, a `default` flag, and an `index` block (`null` when the collection has
+never been indexed). Valid `layer` values are `all` plus the named layer ids —
+see **Layers** above.
 
 ### Index block
 
@@ -209,7 +213,7 @@ Installed 84 packages in 275ms
 
 The server then starts on stdio and waits for input — press Ctrl-C once you see the
 install line. Embedding model weights are fetched separately, on the first `ask_docs`
-or `reindex` call.
+or `reindex` call. `uvx mcp-docs-ask --version` prints the build `uvx` resolved.
 
 > **Linux (including WSL, containers, and CI):** the PyPI `torch` wheel for Linux is
 > the CUDA build. It pulls ~15 `nvidia-*` packages whether or not the machine has an
@@ -301,5 +305,5 @@ uv run pytest
   change (fingerprint check). You do not need `reindex` after editing local docs.
 - **Git URL:** `ask_docs` never fetches. Call `reindex` to `git fetch` the configured
   `ref` and rebuild.
-- Changing `embedding_model` invalidates the on-disk index (rebuild on next use /
-  `reindex`).
+- The fingerprint also covers `embedding_model`, `chunk_max_chars`, layer globs,
+  and the on-disk index format, so changing any of them rebuilds on the next call.
